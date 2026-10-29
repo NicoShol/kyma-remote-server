@@ -11,7 +11,7 @@ and a database dump. The plan and its reasons: `openai-ads-api/docs/2026-10-26_p
 | `postgres/` | Postgres 17 (apt.postgresql.org): config, `pg_hba`/`pg_ident`, the `kyma` database and roles | `sudo bash install.sh` (step 1) |
 | `postgres/*-reader*.sh` | `add-reader.sh <machine> '<key>'`, `remove-reader.sh <machine>`, `list-readers.sh`: the reader machines (role `reader_<machine>` + `pgtunnel` key) | `ssh -t deploy@… "sudo ~/kyma-setup/postgres/<script> …"` (step 8) |
 | `ssh/` | The `pgtunnel` account: reader machines can only forward to Postgres | `sudo bash setup-pgtunnel.sh` (step 2) |
-| `cron/` | `kyma-daily.sh`: the daily update of the prod database as `deploy` (06:00 UTC), logs in `~/kyma/logs/` | `deploy`'s crontab (step 6) |
+| `cron/` | `kyma-daily.sh`: the update of the prod database as `deploy`, 4 times a day (00:00, 06:00, 12:00, 18:00 UTC), one log per day in `~/kyma/logs/` | `deploy`'s crontab (step 6) |
 | `deploy/` | `update-code.sh [repo…]`: brings the server's clones of openai-ads-api and google-analytics-export up to date with `main` (`git pull --ff-only` + `uv sync`), after a PR is merged. Waits for a running daily update; stops on local changes | `ssh deploy@46.224.142.195 '~/kyma-setup/deploy/update-code.sh'` |
 | `backup/` | `kyma-pg-backup.sh`: daily `pg_dump` of `kyma` (06:30 UTC) into `~/backups/kyma-pg/`, kept 60 days | `deploy`'s crontab (step 7) |
 | `clients/push-secrets.sh` | Copies the API keys and `cle.json` to the server's clones (mode 600, through SSH's stdin) | run on the laptop (step 6) |

@@ -1,13 +1,14 @@
 #!/bin/bash
-# Daily update of the prod database, as deploy (openai-ads-api/docs/2026-10-26_prod-database-plan.md,
+# Update of the prod database, as deploy, 4 times a day (openai-ads-api/docs/2026-10-26_prod-database-plan.md,
 # step 6): OpenAI Ads and Thrad (openai-ads-api/tools/daily_update.py), then Google Analytics
-# (google-analytics-export/main.py). One log per day in ~/kyma/logs/, kept 60 days.
+# (google-analytics-export/main.py). One log per day in ~/kyma/logs/ (every run of the day
+# appends to it), kept 60 days.
 #
 # Everything here is in UTC, the server's time zone: the schedule, the log, the dates of
 # "today", and the update_time that ads_db.py writes (the laptop writes Paris time instead;
 # thrad_db.py always writes UTC with a Z).
-# crontab of deploy, every day at 06:00 UTC:
-#   0 6 * * * /home/deploy/kyma-setup/cron/kyma-daily.sh
+# crontab of deploy, at 00:00, 06:00, 12:00 and 18:00 UTC:
+#   0 0,6,12,18 * * * /home/deploy/kyma-setup/cron/kyma-daily.sh
 # By hand, now: ~/kyma-setup/cron/kyma-daily.sh
 # The code isn't pulled here: updating it stays deliberate, with deploy/update-code.sh.
 set -uo pipefail
