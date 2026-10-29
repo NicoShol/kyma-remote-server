@@ -9,7 +9,7 @@
 # crontab of deploy, every day at 06:00 UTC:
 #   0 6 * * * /home/deploy/kyma-setup/cron/kyma-daily.sh
 # By hand, now: ~/kyma-setup/cron/kyma-daily.sh
-# The code isn't pulled here: updating it stays a deliberate git pull + uv sync.
+# The code isn't pulled here: updating it stays deliberate, with deploy/update-code.sh.
 set -uo pipefail
 export PATH="$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin"   # cron's PATH has no uv
 export LC_ALL=C.UTF-8
