@@ -37,8 +37,10 @@ ssh -t deploy@46.224.142.195 'sudo bash ~/kyma-setup/postgres/install.sh'
 
 ## Time zone
 
-The server runs on **UTC**, and so does everything it does: cron schedules, logs, and the `update_time` that
-`ads_db.py` writes there. The laptop writes Paris time; `thrad_db.py` always writes UTC (with a `Z`).
+The server runs on **UTC**, and so does everything it does: cron schedules, logs, and the times it stores.
+Since plan C (`openai-ads-api/docs/2026-10-29_utc-plan.md`), every stored time is UTC wherever it was
+written, laptop included: `update_time` with a `Z`, OpenAI's report keyed on the UTC hour, GA's hours and
+days in UTC. Only OpenAI's own conversions and reach stay on Paris days: the API has nothing else.
 
 ## GitHub access
 
