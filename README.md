@@ -16,6 +16,7 @@ and a database dump. The plan and its reasons: `openai-ads-api/docs/2026-10-26_p
 | `clients/push-secrets.sh` | Copies the API keys and `cle.json` to the server's clones (mode 600, through SSH's stdin) | run on the laptop (step 6) |
 | `clients/macos/` | The laptop's tunnel (`eu.kyma.pg-tunnel.plist`): localhost:5433 → the server's Postgres socket, as `deploy` | copy to `~/Library/LaunchAgents/`, `launchctl bootstrap` (step 4) |
 | `clients/macos/` | `pull-backups.sh` + `eu.kyma.pg-backup-pull.plist`: the laptop pulls the dumps to `~/Backups/kyma/server/` at 19:00 (local time) | same (step 7) |
+| `howtos/` | `postgre-connexion.md`: how the laptop connects to the prod Postgres (fields, tunnel, `pg_hba`), and what to do when it doesn't | to read |
 
 ## Applying a change
 
