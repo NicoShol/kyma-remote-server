@@ -9,6 +9,7 @@ and a database dump. The plan and its reasons: `openai-ads-api/docs/2026-10-26_p
 | Folder | What | Installed by |
 |---|---|---|
 | `postgres/` | Postgres 17 (apt.postgresql.org): config, `pg_hba`/`pg_ident`, the `kyma` database and roles | `sudo bash install.sh` (step 1) |
+| `postgres/add-app-role.sh` | The Kyma platform's schema `app` and its login `kyma_app` (writes `app` only; no password, peer auth as `deploy`) | `ssh -t deploy@… "sudo bash ~/kyma-setup/postgres/add-app-role.sh"`; also run by `install.sh` |
 | `postgres/*-reader*.sh` | `add-reader.sh <machine> '<key>'`, `remove-reader.sh <machine>`, `list-readers.sh`: the reader machines (role `reader_<machine>` + `pgtunnel` key) | `ssh -t deploy@… "sudo ~/kyma-setup/postgres/<script> …"` (step 8) |
 | `ssh/` | The `pgtunnel` account: reader machines can only forward to Postgres | `sudo bash setup-pgtunnel.sh` (step 2) |
 | `cron/` | `kyma-daily.sh`: the update of the prod database as `deploy`, 4 times a day (00:00, 06:00, 12:00, 18:00 UTC), one log per day in `~/kyma/logs/` | `deploy`'s crontab (step 6) |
@@ -30,7 +31,9 @@ ssh -t deploy@46.224.142.195 'sudo bash ~/kyma-setup/postgres/install.sh'
 
 ## Access model
 
-- **Writes:** Unix user `deploy` only (peer auth to `kyma_ingest` on the Postgres socket); no write password exists.
+- **Writes:** Unix user `deploy` only, through peer auth on the Postgres socket; no write password exists.
+  - `kyma_ingest` writes `ads` and `ga` (ingestion).
+  - `kyma_app` writes `app` only: the Kyma platform's clients, advertisers and who owns which ad account. It reads `ads` and `ga` as a reader.
 - **Reads:** one `reader_<machine>` login per machine, through the `pgtunnel` SSH account (step 2).
 - Postgres listens on localhost only; port 5432 is never opened in `ufw`.
 # kyma-remote-server

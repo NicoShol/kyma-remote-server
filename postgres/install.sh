@@ -34,6 +34,9 @@ if [ "$(sudo -u postgres psql -tAc "select 1 from pg_database where datname = 'k
   sudo -u postgres psql -q < 01-kyma-prod.sql
 fi
 
+echo "--- the platform's role and schema"
+bash add-app-role.sh
+
 echo "--- listening"
 ss -tlnp | grep -E 'postgres|:5432' || true
 sudo -u postgres psql -tAc "select version()"
