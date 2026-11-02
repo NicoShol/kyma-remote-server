@@ -4,6 +4,7 @@
 #   from the laptop: ssh deploy@46.224.142.195 '~/kyma-setup/deploy/update-code.sh'
 #   one repo only:   ssh deploy@46.224.142.195 '~/kyma-setup/deploy/update-code.sh openai-ads-api'
 # Waits for a running daily update to finish (same lock), so the code never changes under it.
+# cron/kyma-daily.sh runs it at the start of every update, holding that lock: KYMA_LOCK_HELD=1.
 # Stops on a clone with local changes or not on main, and pulls fast-forward only: the
 # server never makes commits of its own. Then applies openai-ads-api's schema migrations
 # (tools/migrate.py, docs/webapp/2026-11-02_migrations-plan.md): ads as kyma_ingest, app as
@@ -22,10 +23,12 @@ for r in "$@"; do
 done
 [ $# -gt 0 ] && REPOS=("$@")
 
-exec 9>"$LOGS/.daily.lock"
-if ! flock -n 9; then
-  echo "A daily update is running: waiting for it (up to 30 min)..."
-  flock -w 1800 9 || { echo "Still running after 30 min: nothing changed."; exit 1; }
+if [ "${KYMA_LOCK_HELD:-}" != 1 ]; then
+  exec 9>"$LOGS/.daily.lock"
+  if ! flock -n 9; then
+    echo "A daily update is running: waiting for it (up to 30 min)..."
+    flock -w 1800 9 || { echo "Still running after 30 min: nothing changed."; exit 1; }
+  fi
 fi
 
 echo "=== $(date '+%F %T %Z') update-code ${REPOS[*]}"
