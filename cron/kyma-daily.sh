@@ -10,7 +10,10 @@
 # crontab of deploy, at 00:00, 06:00, 12:00 and 18:00 UTC:
 #   0 0,6,12,18 * * * /home/deploy/kyma-setup/cron/kyma-daily.sh
 # By hand, now: ~/kyma-setup/cron/kyma-daily.sh
-# The code isn't pulled here: updating it stays deliberate, with deploy/update-code.sh.
+# Each run first brings the code up to date with GitHub's main (deploy/update-code.sh: pull,
+# uv sync, schema migrations), so a merged PR reaches prod within 6 hours. If that fails (GitHub
+# unreachable, local changes, a migration), the update still runs on the code already there,
+# and the run ends FAILED. Each run logs the commit it ran.
 set -uo pipefail
 export PATH="$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin"   # cron's PATH has no uv
 export LC_ALL=C.UTF-8
@@ -26,6 +29,11 @@ fi
 status=0
 {
   echo "=== $(date '+%F %T %Z') start"
+  # This script holds the lock: update-code.sh mustn't wait for it.
+  KYMA_LOCK_HELD=1 "$HOME/kyma-setup/deploy/update-code.sh" || { status=1; echo "update-code FAILED: running the code already there"; }
+  for r in openai-ads-api google-analytics-export; do
+    echo "$r at $(git -C "$HOME/kyma/$r" log --oneline -1)"
+  done
   cd "$HOME/kyma/openai-ads-api" && uv run --frozen --no-dev tools/daily_update.py || status=1
   cd "$HOME/kyma/google-analytics-export" && uv run --frozen --no-dev main.py || status=1   # reads ./cle.json
   echo "=== $(date '+%F %T %Z') end, $([ $status = 0 ] && echo OK || echo FAILED)"
