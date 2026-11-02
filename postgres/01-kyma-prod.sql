@@ -13,7 +13,9 @@ create database kyma owner kyma_ingest;
 revoke all on database kyma from public;
 grant connect on database kyma to kyma_ingest, kyma_reader;
 -- on the database, not on the roles: settings on a group role aren't inherited by its members
-alter database kyma set search_path = ads, ga, public;
+-- ref: reference data (exchange rates), created by openai-ads-api's migration ads/0002, which
+-- sets this same search_path on an existing database.
+alter database kyma set search_path = ads, ga, ref, public;
 alter database kyma set timezone = 'Europe/Paris';
 
 \connect kyma
