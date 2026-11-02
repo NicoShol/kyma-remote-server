@@ -5,7 +5,10 @@
 #   one repo only:   ssh deploy@46.224.142.195 '~/kyma-setup/deploy/update-code.sh openai-ads-api'
 # Waits for a running daily update to finish (same lock), so the code never changes under it.
 # Stops on a clone with local changes or not on main, and pulls fast-forward only: the
-# server never makes commits of its own. Log: ~/kyma/logs/update-code.log (UTC).
+# server never makes commits of its own. Then applies openai-ads-api's schema migrations
+# (tools/migrate.py, docs/webapp/2026-11-02_migrations-plan.md): ads as kyma_ingest, app as
+# kyma_app, both by peer auth as deploy. A failed migration stops here, before the next daily
+# update runs against tables the code doesn't expect. Log: ~/kyma/logs/update-code.log (UTC).
 set -euo pipefail
 export PATH="$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin"
 export LC_ALL=C.UTF-8
@@ -43,4 +46,12 @@ for r in "${REPOS[@]}"; do
   fi
   uv sync --frozen --no-dev --quiet
 done
+
+if [[ " ${REPOS[*]} " == *" openai-ads-api "* ]]; then
+  cd "$HOME/kyma/openai-ads-api"
+  echo "--- schema migrations"
+  uv run --frozen --no-dev tools/migrate.py ads --apply      # DATABASE_URL in .env: kyma_ingest
+  uv run --frozen --no-dev tools/migrate.py app --apply --db 'postgresql://kyma_app@/kyma?host=/var/run/postgresql'
+  uv run --frozen --no-dev tools/migrate.py --status
+fi
 echo "=== $(date '+%F %T %Z') done"
