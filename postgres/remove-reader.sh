@@ -1,5 +1,5 @@
 #!/bin/bash
-# Step 8 of openai-ads-api/docs/2026-10-26_prod-database-plan.md: cuts one reader machine off. From the laptop:
+# Step 8 of openai-ads-api/docs/old/2026-10-26_prod-database-plan.md: cuts one reader machine off. From the laptop:
 #   ssh -t deploy@46.224.142.195 "sudo ~/kyma-setup/postgres/remove-reader.sh <machine>"
 # Removes its pgtunnel key, ends its database sessions and drops reader_<machine>. Safe to re-run.
 set -euo pipefail

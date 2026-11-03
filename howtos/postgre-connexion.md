@@ -1,6 +1,6 @@
 # Connecting to the prod Postgres from the laptop
 
-How the operator's laptop reaches the `kyma` database on the server (46.224.142.195), and why no password is needed. For the setup itself, see `openai-ads-api/docs/2026-10-26_prod-database-plan.md` (steps 1, 2 and 4). For reader machines, see `openai-ads-api/HOWTO_DB.md` §7.
+How the operator's laptop reaches the `kyma` database on the server (46.224.142.195), and why no password is needed. For the setup itself, see `openai-ads-api/docs/old/2026-10-26_prod-database-plan.md` (steps 1, 2 and 4). For reader machines, see `openai-ads-api/HOWTO_DB.md` §7.
 
 **In short:** an SSH tunnel, run as `deploy`, brings Postgres to `localhost:5433`. Postgres trusts the Unix user `deploy`, so the SSH key is the only credential.
 

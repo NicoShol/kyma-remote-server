@@ -1,5 +1,5 @@
 #!/bin/bash
-# Step 1 of openai-ads-api/docs/2026-10-26_prod-database-plan.md: Postgres 17 from apt.postgresql.org, its
+# Step 1 of openai-ads-api/docs/old/2026-10-26_prod-database-plan.md: Postgres 17 from apt.postgresql.org, its
 # config, and the kyma database. Run on the server, from the folder holding these files:
 #   sudo bash install.sh
 # Safe to re-run: the config is re-installed, the database is only created when missing.

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<!-- The laptop's tunnel to the prod database (openai-ads-api/docs/2026-10-26_prod-database-plan.md,
+<!-- The laptop's tunnel to the prod database (openai-ads-api/docs/old/2026-10-26_prod-database-plan.md,
      step 4): localhost:5433 is the server's Postgres socket, reached as Unix user deploy, so Postgres
      sees deploy (peer auth: kyma_ingest writes, reader_deploy reads, no password).
      localhost:5432 stays the local test container.

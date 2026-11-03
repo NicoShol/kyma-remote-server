@@ -1,4 +1,4 @@
--- Prod database, schemas and roles (openai-ads-api/docs/2026-10-26_prod-database-plan.md, step 1).
+-- Prod database, schemas and roles (openai-ads-api/docs/old/2026-10-26_prod-database-plan.md, step 1).
 -- Same layout as openai-ads-api/infra/postgres/initdb/01-kyma.sh, without passwords and without kyma_test.
 -- Run once by install.sh, as the postgres superuser.
 \set ON_ERROR_STOP on

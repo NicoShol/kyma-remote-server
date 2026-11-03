@@ -1,5 +1,5 @@
 #!/bin/bash
-# Step 8 of openai-ads-api/docs/2026-10-26_prod-database-plan.md: who can read, and when they last did.
+# Step 8 of openai-ads-api/docs/old/2026-10-26_prod-database-plan.md: who can read, and when they last did.
 #   ssh -t deploy@46.224.142.195 "sudo ~/kyma-setup/postgres/list-readers.sh"
 # A role without a key line, or a key line without a role, is shown as such: neither half alone reads anything.
 set -euo pipefail

@@ -1,6 +1,6 @@
 #!/bin/bash
 # Pulls the server's daily database dumps to the laptop, so a copy lives off the server
-# (openai-ads-api/docs/2026-10-26_prod-database-plan.md, step 7). Run by eu.kyma.pg-backup-pull.plist
+# (openai-ads-api/docs/old/2026-10-26_prod-database-plan.md, step 7). Run by eu.kyma.pg-backup-pull.plist
 # at 19:00, or by hand. Never deletes on the server; keeps 60 days here.
 # A run missed while the Mac sleeps starts on wake, often before the network is back:
 # up to 10 tries, a minute apart, before giving up until the next day.
