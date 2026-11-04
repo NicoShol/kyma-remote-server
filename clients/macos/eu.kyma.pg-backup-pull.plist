@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<!-- Daily pull of the server's database dumps at 19:00 (openai-ads-api/docs/2026-10-26_prod-database-plan.md,
+<!-- Daily pull of the server's database dumps at 19:00 (openai-ads-api/docs/old/2026-10-26_prod-database-plan.md,
      step 7). Replaces eu.kyma.pg-backup, which dumped the local container. If the Mac is asleep
      then, launchd runs it on wake. Install: cp to ~/Library/LaunchAgents/, then
        launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/eu.kyma.pg-backup-pull.plist -->

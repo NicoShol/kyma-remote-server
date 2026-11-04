@@ -1,5 +1,5 @@
 #!/bin/bash
-# Step 2 of openai-ads-api/docs/2026-10-26_prod-database-plan.md: the pgtunnel SSH account.
+# Step 2 of openai-ads-api/docs/old/2026-10-26_prod-database-plan.md: the pgtunnel SSH account.
 # Run on the server, from the folder holding these files, keeping another deploy session open:
 #   sudo bash setup-pgtunnel.sh
 # Safe to re-run. sshd is only reloaded once the new config passes sshd -t and leaves deploy unchanged.

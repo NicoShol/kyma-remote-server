@@ -1,5 +1,5 @@
 #!/bin/bash
-# Step 8 of openai-ads-api/docs/2026-10-26_prod-database-plan.md: lets one more machine read the kyma
+# Step 8 of openai-ads-api/docs/old/2026-10-26_prod-database-plan.md: lets one more machine read the kyma
 # database. From the operator's laptop:
 #   ssh -t deploy@46.224.142.195 "sudo ~/kyma-setup/postgres/add-reader.sh <machine> '<ssh-public-key>'"
 # Creates the read-only login reader_<machine> with a random password, and adds the machine's key to

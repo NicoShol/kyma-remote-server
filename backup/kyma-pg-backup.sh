@@ -1,5 +1,5 @@
 #!/bin/bash
-# Daily pg_dump of the prod kyma database, as deploy (openai-ads-api/docs/2026-10-26_prod-database-plan.md,
+# Daily pg_dump of the prod kyma database, as deploy (openai-ads-api/docs/old/2026-10-26_prod-database-plan.md,
 # step 7). Times are UTC, like the rest of the server. Kept 60 days, and pulled by the laptop
 # (clients/macos/pull-backups.sh) so a copy lives off the server.
 # crontab of deploy, once a day, after the 06:00 update:

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Update of the prod database, as deploy, 4 times a day (openai-ads-api/docs/2026-10-26_prod-database-plan.md,
+# Update of the prod database, as deploy, 4 times a day (openai-ads-api/docs/old/2026-10-26_prod-database-plan.md,
 # step 6): OpenAI Ads and Thrad (openai-ads-api/tools/daily_update.py), then Google Analytics
 # (google-analytics-export/main.py). One log per day in ~/kyma/logs/ (every run of the day
 # appends to it), kept 60 days.
