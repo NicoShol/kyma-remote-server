@@ -8,8 +8,9 @@
 # Stops on a clone with local changes or not on main, and pulls fast-forward only: the
 # server never makes commits of its own. Then applies openai-ads-api's schema migrations
 # (tools/migrate.py, docs/webapp/2026-11-02_migrations-plan.md): ads as kyma_ingest, app as
-# kyma_app, both by peer auth as deploy. A failed migration stops here, before the next daily
-# update runs against tables the code doesn't expect. Log: ~/kyma/logs/update-code.log (UTC).
+# kyma_app, both by peer auth as deploy; then google-analytics-export's (ga, as kyma_ingest:
+# its docs/2026-11-03_multi-property-plan.md). A failed migration stops here, before the next
+# daily update runs against tables the code doesn't expect. Log: ~/kyma/logs/update-code.log (UTC).
 set -euo pipefail
 export PATH="$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin"
 export LC_ALL=C.UTF-8
@@ -55,6 +56,13 @@ if [[ " ${REPOS[*]} " == *" openai-ads-api "* ]]; then
   echo "--- schema migrations"
   uv run --frozen --no-dev tools/migrate.py ads --apply      # DATABASE_URL in .env: kyma_ingest
   uv run --frozen --no-dev tools/migrate.py app --apply --db 'postgresql://kyma_app@/kyma?host=/var/run/postgresql'
+  uv run --frozen --no-dev tools/migrate.py --status
+fi
+# Only once its main has migrations (2026-11-03): before that, nothing to apply.
+if [[ " ${REPOS[*]} " == *" google-analytics-export "* ]] && [ -f "$HOME/kyma/google-analytics-export/tools/migrate.py" ]; then
+  cd "$HOME/kyma/google-analytics-export"
+  echo "--- ga schema migrations"
+  uv run --frozen --no-dev tools/migrate.py --apply           # DATABASE_URL in .env: kyma_ingest
   uv run --frozen --no-dev tools/migrate.py --status
 fi
 echo "=== $(date '+%F %T %Z') done"
