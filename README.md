@@ -50,7 +50,7 @@ to the website. Nothing to add in DNS.
 5. **Check from the laptop:** `curl -s https://kyma-solutions.eu/v1/me` answers
    `{"error": {"code": "unauthorized", …}}`; https://kyma-solutions.eu/platform/ shows the login;
    https://kyma-solutions.eu/v1/docs the API's documentation.
-6. **Staff only at first:** prod starts in staff-only mode (openai-ads-api migration `app/0012`). Client users
+6. **Staff only at first:** prod starts in staff-only mode (openai-ads-api migration `app/0016`). Client users
    and client tokens get "The Kyma platform opens soon." To let clients in: `uv run webapp/admin.py access open`
    (laptop or server), or **Settings > Platform access**. For maintenance:
    `admin.py access staff-only --message "…"`, then `access open`.
