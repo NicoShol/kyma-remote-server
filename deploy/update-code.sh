@@ -10,11 +10,16 @@
 # (tools/migrate.py, docs/webapp/2026-11-02_migrations-plan.md): ads as kyma_ingest, app as
 # kyma_app, both by peer auth as deploy; then google-analytics-export's (ga, as kyma_ingest:
 # its docs/2026-11-03_multi-property-plan.md). A failed migration stops here, before the next
-# daily update runs against tables the code doesn't expect. Log: ~/kyma/logs/update-code.log (UTC).
+# daily update runs against tables the code doesn't expect. Then, when openai-ads-api's code
+# changed (or the platform isn't running), restarts the Kyma platform (platform/: the user
+# service kyma-platform, once start.sh installed it) and waits for its /healthz.
+# Log: ~/kyma/logs/update-code.log (UTC).
 set -euo pipefail
 export PATH="$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin"
 export LC_ALL=C.UTF-8
+export XDG_RUNTIME_DIR=/run/user/$(id -u)   # systemctl --user, from cron too
 REPOS=(openai-ads-api google-analytics-export)
+PLATFORM_CHANGED=0
 LOGS=$HOME/kyma/logs
 mkdir -p "$LOGS"
 exec > >(tee -a "$LOGS/update-code.log") 2>&1
@@ -46,6 +51,7 @@ for r in "${REPOS[@]}"; do
     echo "$r: already up to date ($(git log --oneline -1))"
   else
     echo "$r: $(git rev-parse --short "$before") -> $(git rev-parse --short HEAD)"
+    if [ "$r" = openai-ads-api ]; then PLATFORM_CHANGED=1; fi
     git log --oneline "$before..HEAD" | sed 's/^/  /'
   fi
   uv sync --frozen --no-dev --quiet
@@ -57,6 +63,16 @@ if [[ " ${REPOS[*]} " == *" openai-ads-api "* ]]; then
   uv run --frozen --no-dev tools/migrate.py ads --apply      # DATABASE_URL in .env: kyma_ingest
   uv run --frozen --no-dev tools/migrate.py app --apply --db 'postgresql://kyma_app@/kyma?host=/var/run/postgresql'
   uv run --frozen --no-dev tools/migrate.py --status
+  # The platform runs this code: restarted on new code (after its migrations), or if it's down.
+  if systemctl --user is-enabled --quiet kyma-platform 2>/dev/null; then
+    if [ "$PLATFORM_CHANGED" = 1 ] || ! systemctl --user is-active --quiet kyma-platform; then
+      echo "--- restart the platform (kyma-platform)"
+      systemctl --user restart kyma-platform
+      for _ in $(seq 1 30); do curl -sf -o /dev/null http://127.0.0.1:8780/healthz && break; sleep 1; done
+      curl -sf http://127.0.0.1:8780/healthz && echo \
+        || { echo "kyma-platform isn't healthy after its restart: journalctl --user -u kyma-platform"; exit 1; }
+    fi
+  fi
 fi
 # Only once its main has migrations (2026-11-03): before that, nothing to apply.
 if [[ " ${REPOS[*]} " == *" google-analytics-export "* ]] && [ -f "$HOME/kyma/google-analytics-export/tools/migrate.py" ]; then

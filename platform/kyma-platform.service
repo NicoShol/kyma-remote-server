@@ -1,0 +1,30 @@
+# The Kyma platform (openai-ads-api webapp/api/run.py): the page, its /api and the public API /v1,
+# on 127.0.0.1:8780 behind nginx (nginx-platform.conf). A systemd *user* service of deploy, so
+# deploy/update-code.sh restarts it after a merge without sudo (linger: install.sh).
+# Installed by start.sh as ~/.config/systemd/user/kyma-platform.service.
+#   systemctl --user status kyma-platform
+#   journalctl --user -u kyma-platform -n 50        # its output (start, errors)
+# Reads as reader_deploy (DATABASE_URL_RO of the clone's .env) and decrypts with the master key
+# (also in .env); writes sessions, templates, API tokens and the API's call log as kyma_app, by
+# peer auth as deploy (postgres/pg_ident.conf).
+
+[Unit]
+Description=Kyma platform: the page, /api and the public API /v1
+After=network-online.target
+
+[Service]
+WorkingDirectory=%h/kyma/openai-ads-api
+Environment=PATH=%h/.local/bin:/usr/local/bin:/usr/bin:/bin
+Environment=LC_ALL=C.UTF-8
+Environment=PYTHONUNBUFFERED=1
+Environment=PLATFORM_DATABASE_URL=postgresql://kyma_app@/kyma?host=/var/run/postgresql
+# The page's public address: its host may use the API with the cookie, and https makes it Secure.
+Environment=PLATFORM_BASE_URL=https://kyma-solutions.eu/platform
+ExecStart=%h/.local/bin/uv run --frozen --no-dev webapp/api/run.py --no-open --port 8780
+Restart=on-failure
+RestartSec=5
+MemoryMax=700M
+NoNewPrivileges=true
+
+[Install]
+WantedBy=default.target
