@@ -12,7 +12,8 @@
 # its docs/2026-11-03_multi-property-plan.md). A failed migration stops here, before the next
 # daily update runs against tables the code doesn't expect. Then, when openai-ads-api's code
 # changed (or the platform isn't running), restarts the Kyma platform (platform/: the user
-# service kyma-platform, once start.sh installed it) and waits for its /healthz.
+# service kyma-platform, once start.sh installed it) and waits for its /healthz; if that
+# service isn't enabled, warns that the platform was not restarted.
 # Log: ~/kyma/logs/update-code.log (UTC).
 set -euo pipefail
 export PATH="$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin"
@@ -72,6 +73,12 @@ if [[ " ${REPOS[*]} " == *" openai-ads-api "* ]]; then
       curl -sf http://127.0.0.1:8780/healthz && echo \
         || { echo "kyma-platform isn't healthy after its restart: journalctl --user -u kyma-platform"; exit 1; }
     fi
+  elif [ "$PLATFORM_CHANGED" = 1 ] || systemctl --user is-active --quiet kyma-platform 2>/dev/null; then
+    # Not enabled (started by hand, or not installed): said, or the new code would go unserved unnoticed.
+    state=$(systemctl --user is-enabled kyma-platform 2>&1 | head -1 || true)
+    echo "--- WARNING: kyma-platform is not enabled (${state:-unknown}): NOT restarted, it keeps running"
+    echo "    the code it started with. Enable and restart it: ~/kyma-setup/platform/start.sh"
+    echo "    (no platform hosted on this server: ignore this)"
   fi
 fi
 # Only once its main has migrations (2026-11-03): before that, nothing to apply.
