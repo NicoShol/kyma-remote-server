@@ -37,6 +37,9 @@ fi
 echo "--- the platform's role and schema"
 bash add-app-role.sh
 
+echo "--- the backups' login"
+bash add-backup-role.sh
+
 echo "--- listening"
 ss -tlnp | grep -E 'postgres|:5432' || true
 sudo -u postgres psql -tAc "select version()"
