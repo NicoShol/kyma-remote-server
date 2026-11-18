@@ -10,12 +10,13 @@ and a database dump. The plan and its reasons: `openai-ads-api/docs/old/2026-10-
 |---|---|---|
 | `postgres/` | Postgres 17 (apt.postgresql.org): config, `pg_hba`/`pg_ident`, the `kyma` database and roles | `sudo bash install.sh` (step 1) |
 | `postgres/add-app-role.sh` | The Kyma platform's schema `app` and its login `kyma_app` (writes `app` only; no password, peer auth as `deploy`) | `ssh -t deploy@… "sudo bash ~/kyma-setup/postgres/add-app-role.sh"`; also run by `install.sh` |
+| `postgres/add-backup-role.sh` | The backups' login `kyma_backup_read`: reads every table (Postgres' `pg_read_all_data`), writes nothing; peer auth as `deploy`, no password | `ssh -t deploy@… "sudo bash ~/kyma-setup/postgres/add-backup-role.sh"`; also run by `install.sh` |
 | `postgres/*-reader*.sh` | `add-reader.sh <machine> '<key>'`, `remove-reader.sh <machine>`, `list-readers.sh`: the reader machines (role `reader_<machine>` + `pgtunnel` key) | `ssh -t deploy@… "sudo ~/kyma-setup/postgres/<script> …"` (step 8) |
 | `ssh/` | The `pgtunnel` account: reader machines can only forward to Postgres | `sudo bash setup-pgtunnel.sh` (step 2) |
 | `cron/` | `kyma-daily.sh`: the update of the prod database as `deploy`, 4 times a day (00:00, 06:00, 12:00, 18:00 UTC), one log per day in `~/kyma/logs/`. Each run first deploys GitHub's `main` (`update-code.sh`: pull, `uv sync`, migrations) and logs the commit it ran | `deploy`'s crontab (step 6) |
 | `deploy/` | `update-code.sh [repo…]`: brings the server's clones of openai-ads-api and google-analytics-export up to date with `main` (`git pull --ff-only` + `uv sync`), after a PR is merged, then applies the schema migrations (`tools/migrate.py`): openai-ads-api's `ads` as `kyma_ingest` and `app` as `kyma_app`, then google-analytics-export's `ga` as `kyma_ingest`. Waits for a running daily update; stops on local changes or a failed migration | `ssh deploy@46.224.142.195 '~/kyma-setup/deploy/update-code.sh'` |
 | `platform/` | The Kyma platform (openai-ads-api `webapp/api/run.py`: the page, `/api`, the public API `/v1`) on **https://kyma-solutions.eu**, next to the website: `/platform/` (the page), `/api/`, `/v1/` (docs at `/v1/docs`). A systemd **user** service of `deploy` (`kyma-platform`, on 127.0.0.1:8780), behind nginx: a snippet included by one line in the website's server block, plus request limits per address (logins 10/min, API 10/s, 20 connections) and for the whole server (logins 60/min, API 100/s). `update-code.sh` restarts it after new code | `sudo bash install.sh` once (linger, nginx), then `start.sh` as `deploy` (below, "Hosting the platform") |
-| `backup/` | `kyma-pg-backup.sh`: daily `pg_dump` of `kyma` (06:30 UTC) into `~/backups/kyma-pg/`, kept 60 days | `deploy`'s crontab (step 7) |
+| `backup/` | `kyma-pg-backup.sh`: daily `pg_dump` of `kyma` (06:30 UTC) into `~/backups/kyma-pg/`, kept 60 days. Dumps as `kyma_backup_read`, then **checks** the dump (readable; schemas `ads`, `ga`, `app`; 8 key tables; not under 50 % of the previous one): on any failure, no dump is kept, nothing is left behind, exit 1. With `HEALTHCHECK_URL` in `~/kyma-setup/backup/.env` (healthchecks.io, never in git), pings it after a good dump and its `/fail` after a failure | `deploy`'s crontab (step 7) |
 | `clients/push-secrets.sh` | Copies the master key of the encrypted API keys (`SECRETS_MASTER_KEYS`, `SECRETS_ACTIVE_KEK` of the laptop's `openai-ads-api/.env`, checked first) and `cle.json` to the server's clones (mode 600, through SSH's stdin). The API keys themselves are in the database (openai-ads-api `docs/webapp/2026-11-09_api_keys_stored_encrypted_master_key_env.md`); removes the server's old `api_keys.toml` | run on the laptop (step 6), and after changing the master key |
 | `clients/macos/` | The laptop's tunnel (`eu.kyma.pg-tunnel.plist`): localhost:5433 → the server's Postgres socket, as `deploy` | copy to `~/Library/LaunchAgents/`, `launchctl bootstrap` (step 4) |
 | `clients/macos/` | `pull-backups.sh` + `eu.kyma.pg-backup-pull.plist`: the laptop pulls the dumps to `~/Backups/kyma/server/` at 19:00 (local time) | same (step 7) |
@@ -64,6 +65,27 @@ when openai-ads-api's code changed, after its migrations, then checks `/healthz`
 - **Requests:** `/var/log/nginx/kyma-platform.access.log`; every `/v1` call also in `app.api_requests` (90 days).
 - **Stop it:** `systemctl --user disable --now kyma-platform`; nginx then answers 502 on the three paths.
   To give them back to the website, remove the include line and `sudo systemctl reload nginx`.
+
+## Backups
+
+The prod database is dumped daily (`backup/kyma-pg-backup.sh`) and pulled by the laptop at 19:00
+(`clients/macos/pull-backups.sh`). The whole server also has Hetzner's daily backups (7 kept).
+Plan and open items: openai-ads-api's `docs/2026-11-13_database-backups-plan.md`.
+
+**From 2026-10-31 to the fix, every daily dump failed.** The dumps ran as `kyma_ingest`, which can't read
+schema `app`'s private tables, so they left empty `.part` files. The fix, once:
+1. Copy the folders: `scp -r postgres backup deploy@46.224.142.195:kyma-setup/`
+2. The login: `ssh -t deploy@46.224.142.195 'sudo bash ~/kyma-setup/postgres/add-backup-role.sh'`
+3. A dump now, by hand: `ssh deploy@46.224.142.195 '~/kyma-setup/backup/kyma-pg-backup.sh'`
+   - it should end with `checked: ads ga app, 8 key tables`;
+   - it also deletes the empty `.part` files on the server.
+4. On the laptop: `bash clients/macos/pull-backups.sh`. The laptop's own old `.part` files can be deleted by hand.
+5. Optional, recommended: a check on healthchecks.io (period 1 day, grace 2 hours), then
+   `echo 'HEALTHCHECK_URL=https://hc-ping.com/<uuid>' > ~/kyma-setup/backup/.env` on the server (mode 600).
+   No ping for a day, or a `/fail`, sends an email.
+
+- **A failed dump:** `tail ~/kyma/logs/backup.log` gives the reason: the check that failed, or `pg_dump`'s error.
+- **After a shrink on purpose** (a big purge): run it once with `KYMA_BACKUP_MIN_RATIO=0`.
 
 ## Access model
 
