@@ -42,7 +42,8 @@ to the website. Nothing to add in DNS.
 2. **Files:** `scp -r platform deploy deploy@46.224.142.195:kyma-setup/` (`deploy/` too: its `update-code.sh` restarts the platform).
 3. **Once, with sudo:** `ssh -t deploy@46.224.142.195 'sudo bash ~/kyma-setup/platform/install.sh'`
    - linger for `deploy` (its user services run without a login, and at boot);
-   - nginx: `conf.d/kyma-platform-zones.conf`, `snippets/kyma-platform.conf` and `kyma-platform-proxy.conf`,
+   - nginx: `conf.d/kyma-platform-zones.conf`, `conf.d/kyma-cloudflare-real-ip.conf` (the client's real
+     address behind Cloudflare; harmless before Cloudflare), `snippets/kyma-platform.conf` and `kyma-platform-proxy.conf`,
      and `include /etc/nginx/snippets/kyma-platform.conf;` added to `/etc/nginx/sites-available/kyma-solutions.eu`
      after its `client_max_body_size` line. A failed `nginx -t` puts everything back.
    - **Then add the same include line to kyma-website's snapshot** (`deploy/nginx-kyma-solutions.eu.conf`),

@@ -6,10 +6,11 @@
 # then, as deploy (no sudo): ~/kyma-setup/platform/start.sh
 #
 # 1. linger for deploy: its user services (kyma-platform) run without a login, and start at boot;
-# 2. nginx: the request limits (conf.d), the platform's locations (snippets), and one include line
-#    in the website's HTTPS server block (/etc/nginx/sites-available/kyma-solutions.eu), added
-#    once after its client_max_body_size line. The site's file is copied first; if nginx -t
-#    fails, everything is put back as it was and nginx isn't reloaded.
+# 2. nginx: the request limits and the real client address behind Cloudflare (conf.d), the
+#    platform's locations (snippets), and one include line in the website's HTTPS server block
+#    (/etc/nginx/sites-available/kyma-solutions.eu), added once after its client_max_body_size line.
+#    The site's file is copied first; if nginx -t fails, everything is put back as it was and nginx
+#    isn't reloaded.
 # The website's repo (kyma-website, deploy/nginx-kyma-solutions.eu.conf) keeps a snapshot of the
 # site's file: add the same include line there.
 # Safe to re-run.
@@ -27,14 +28,15 @@ echo "linger: $(loginctl show-user deploy -p Linger --value)"
 
 backup=$(mktemp -d)
 cp -a "$SITE" "$backup/site"
-for f in /etc/nginx/conf.d/kyma-platform-zones.conf /etc/nginx/snippets/kyma-platform.conf \
+for f in /etc/nginx/conf.d/kyma-platform-zones.conf /etc/nginx/conf.d/kyma-cloudflare-real-ip.conf \
+         /etc/nginx/snippets/kyma-platform.conf \
          /etc/nginx/snippets/kyma-platform-proxy.conf; do
   [ -f "$f" ] && cp -a "$f" "$backup/$(basename "$f")"
 done
 restore() {
   echo "nginx -t failed: putting everything back." >&2
   cp -a "$backup/site" "$SITE"
-  for f in kyma-platform-zones.conf; do
+  for f in kyma-platform-zones.conf kyma-cloudflare-real-ip.conf; do
     if [ -f "$backup/$f" ]; then cp -a "$backup/$f" /etc/nginx/conf.d/; else rm -f "/etc/nginx/conf.d/$f"; fi
   done
   for f in kyma-platform.conf kyma-platform-proxy.conf; do
@@ -45,6 +47,7 @@ restore() {
 }
 
 install -m 644 nginx-platform-zones.conf /etc/nginx/conf.d/kyma-platform-zones.conf
+install -m 644 nginx-cloudflare-real-ip.conf /etc/nginx/conf.d/kyma-cloudflare-real-ip.conf
 install -m 644 nginx-platform.conf /etc/nginx/snippets/kyma-platform.conf
 install -m 644 nginx-platform-proxy.conf /etc/nginx/snippets/kyma-platform-proxy.conf
 
